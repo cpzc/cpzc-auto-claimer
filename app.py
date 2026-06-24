@@ -2526,6 +2526,8 @@ class AccountsPage(ctk.CTkFrame):
             messagebox.showwarning("No Selection", "Select an account from the table first")
             return
         acct = self.accounts[self.selected_idx]
+        if not self._ensure_driver():
+            return
         self.login_btn.configure(state="disabled")
         self.inbox_btn.configure(state="disabled")
         self.app.log(f"Logging in as {acct['username']}...")

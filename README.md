@@ -29,16 +29,8 @@ pip install -r requirements.txt
 
 ## Usage
 
-### GUI Mode
-
 ```bash
 python app.py
-```
-
-### CLI Mode
-
-```bash
-python auto_claimer.py
 ```
 
 ### Data Files

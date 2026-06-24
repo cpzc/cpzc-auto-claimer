@@ -15,7 +15,6 @@ from colorama import Fore
 import threading
 import json
 import os
-import sys
 import time
 import re
 import random
@@ -29,7 +28,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, StaleElementReferenceException, WebDriverException
+from selenium.common.exceptions import StaleElementReferenceException, WebDriverException
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -357,16 +356,13 @@ def create_account(claim_driver=None, input_fn=None, pause_fn=None):
 
 
 class TikTokSeleniumClaimer:
-    def __init__(self, headless=False, check_interval=5, max_retries=3, username_input_delay=2):
+    def __init__(self, headless=False, username_input_delay=2):
         self.headless = headless
-        self.check_interval = check_interval
-        self.max_retries = max_retries
         self.username_input_delay = float(username_input_delay)
         self.driver = None
         self.current_username = None
         self.claimed = False
         self.stop_scan = threading.Event()
-        self.retry_counts = {}
         self.username_input = None
         self.edit_profile_modal_open = False
         self.username_input_selectors = [
@@ -528,7 +524,6 @@ class TikTokSeleniumClaimer:
             login_btn.click()
             time.sleep(5)
 
-            page_source = self.driver.page_source.lower()
             page_url = self.driver.current_url.lower()
             body_text = ""
             try:
@@ -1495,10 +1490,9 @@ class TikTokSeleniumClaimer:
                 threads = 5
         threads = max(1, min(20, threads))
 
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        claim_log = os.path.join(script_dir, "output", "claimed.txt")
-        error_log = os.path.join(script_dir, "output", "errors.log")
-        os.makedirs(os.path.join(script_dir, "output"), exist_ok=True)
+        claim_log = os.path.join(SCRIPT_DIR, "output", "claimed.txt")
+        error_log = os.path.join(SCRIPT_DIR, "output", "errors.log")
+        os.makedirs(os.path.join(SCRIPT_DIR, "output"), exist_ok=True)
 
         lock = threading.RLock()
         claiming_event = threading.Event()
@@ -2076,27 +2070,24 @@ class AutoScanPage(ctk.CTkFrame):
         self.app.log("Browser ready")
 
         def do_login():
-            script_dir = SCRIPT_DIR
             logged_in = False
             try:
                 if method == "manual":
                     self.app.log("Opening TikTok login page — log in manually in the browser window")
                     self.app.claimer.driver.get("https://www.tiktok.com/login")
-                    done = [False]
                     event = threading.Event()
                     def show_manual():
                         messagebox.showinfo(
                             "Manual Login",
                             "Log in to TikTok in the browser window.\nClick OK after you have logged in."
                         )
-                        done[0] = True
                         event.set()
                     self.app.after(0, show_manual)
                     event.wait(timeout=300)
                     logged_in = self.app.claimer.verify_logged_in()
 
                 elif method == "cookies_json":
-                    path = os.path.join(script_dir, "data", "cookies.json")
+                    path = os.path.join(SCRIPT_DIR, "data", "cookies.json")
                     if not os.path.exists(path):
                         self.app.log(f"File not found: {path}")
                         self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
@@ -2104,7 +2095,7 @@ class AutoScanPage(ctk.CTkFrame):
                     logged_in = self.app.claimer.login_with_cookies(path)
 
                 elif method == "cookies_session":
-                    path = os.path.join(script_dir, "data", "sessions.txt")
+                    path = os.path.join(SCRIPT_DIR, "data", "sessions.txt")
                     if not os.path.exists(path):
                         self.app.log(f"File not found: {path}")
                         self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
@@ -2123,11 +2114,9 @@ class AutoScanPage(ctk.CTkFrame):
                         return result[0] or ""
                     def gui_pause(prompt):
                         clean = prompt.replace(Fore.YELLOW, "").replace(Fore.WHITE, "")
-                        done = [False]
                         event = threading.Event()
                         def show():
                             messagebox.showinfo("Info", clean)
-                            done[0] = True
                             event.set()
                         self.app.after(0, show)
                         event.wait(timeout=30)
@@ -2136,7 +2125,7 @@ class AutoScanPage(ctk.CTkFrame):
                     )
 
                 elif method == "credentials":
-                    path = os.path.join(script_dir, "data", "accounts.txt")
+                    path = os.path.join(SCRIPT_DIR, "data", "accounts.txt")
                     if not os.path.exists(path):
                         self.app.log(f"File not found: {path}")
                         self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
@@ -2656,11 +2645,9 @@ class AccountsPage(ctk.CTkFrame):
         def do_inbox():
             def gui_pause(prompt):
                 clean = prompt.replace(Fore.YELLOW, "").replace(Fore.WHITE, "")
-                done = [False]
                 event = threading.Event()
                 def show():
                     messagebox.showinfo("Action Required", clean)
-                    done[0] = True
                     event.set()
                 self.app.after(0, show)
                 event.wait(timeout=300)

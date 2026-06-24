@@ -35,6 +35,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
+FONT_FAMILY = "Segoe UI"
+FONT_FAMILY_MONO = "Cascadia Code"
+
 
 def load_config():
     config_path = os.path.join(SCRIPT_DIR, "config.json")
@@ -1727,7 +1730,7 @@ class SidebarButton(ctk.CTkButton):
             anchor="w",
             height=44,
             corner_radius=8,
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=14),
             **kwargs,
         )
         self.active = False
@@ -1749,14 +1752,14 @@ class LogPanel(ctk.CTkFrame):
 
         ctk.CTkLabel(
             header, text="Output Log",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(side="left")
 
         ctk.CTkButton(
             header, text="Clear", width=60, height=26,
             fg_color=COLORS["border"], hover_color=COLORS["error"],
-            font=ctk.CTkFont(size=11),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
             command=self.clear,
         ).pack(side="right")
 
@@ -1764,7 +1767,7 @@ class LogPanel(ctk.CTkFrame):
             self,
             fg_color=COLORS["input_bg"],
             text_color=COLORS["text"],
-            font=ctk.CTkFont(family="Consolas", size=11),
+            font=ctk.CTkFont(family=FONT_FAMILY_MONO, size=11),
             corner_radius=6,
             border_width=1,
             border_color=COLORS["border"],
@@ -1795,13 +1798,13 @@ class DashboardPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             scroll, text="Dashboard",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=28, weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 5))
 
         ctk.CTkLabel(
             scroll, text="CPZC Auto Claimer - TikTok Username Scanner & Claimer",
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=13),
             text_color=COLORS["text_dim"],
         ).pack(anchor="w", pady=(0, 20))
 
@@ -1815,7 +1818,7 @@ class DashboardPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             scroll, text="Quick Actions",
-            font=ctk.CTkFont(size=16, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=16, weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(10, 10))
 
@@ -1828,7 +1831,7 @@ class DashboardPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             scroll, text="How to use",
-            font=ctk.CTkFont(size=16, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=16, weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(20, 10))
 
@@ -1842,7 +1845,7 @@ class DashboardPage(ctk.CTkFrame):
         for step in steps:
             ctk.CTkLabel(
                 scroll, text=step,
-                font=ctk.CTkFont(size=12),
+                font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                 text_color=COLORS["text_dim"],
                 anchor="w",
             ).pack(anchor="w", pady=2)
@@ -1853,13 +1856,13 @@ class DashboardPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             card, text=label,
-            font=ctk.CTkFont(size=11),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
             text_color=COLORS["text_dim"],
         ).pack(pady=(14, 0))
 
         val_label = ctk.CTkLabel(
             card, text=value,
-            font=ctk.CTkFont(size=26, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=26, weight="bold"),
             text_color=COLORS["accent"],
         )
         val_label.pack(pady=(2, 12))
@@ -1871,7 +1874,7 @@ class DashboardPage(ctk.CTkFrame):
             text=text,
             height=50,
             corner_radius=10,
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dim"],
             text_color="#ffffff",
@@ -1898,7 +1901,7 @@ class AutoScanPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             scroll, text="Auto Scan & Claim",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=28, weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 20))
 
@@ -1907,13 +1910,13 @@ class AutoScanPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             login_card, text="Login to TikTok",
-            font=ctk.CTkFont(size=15, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w", padx=16, pady=(12, 8))
 
         self.login_status = ctk.CTkLabel(
             login_card, text="Not logged in",
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
             text_color=COLORS["error"],
         )
         self.login_status.pack(anchor="w", padx=16, pady=(0, 8))
@@ -1934,7 +1937,7 @@ class AutoScanPage(ctk.CTkFrame):
             ctk.CTkButton(
                 btn_frame, text=text, height=32,
                 corner_radius=6,
-                font=ctk.CTkFont(size=11),
+                font=ctk.CTkFont(family=FONT_FAMILY, size=11),
                 fg_color=COLORS["border"],
                 hover_color=COLORS["accent_dim"],
                 command=lambda m=method: self._login(m),
@@ -1943,7 +1946,7 @@ class AutoScanPage(ctk.CTkFrame):
         ctk.CTkButton(
             login_card, text="Save Cookies", height=28, width=100,
             corner_radius=6,
-            font=ctk.CTkFont(size=11),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
             fg_color=COLORS["success"],
             hover_color="#00b368",
             text_color="#000000",
@@ -1955,37 +1958,37 @@ class AutoScanPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             config_card, text="Scan Configuration",
-            font=ctk.CTkFont(size=15, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w", padx=16, pady=(12, 8))
 
         cfg_row = ctk.CTkFrame(config_card, fg_color="transparent")
         cfg_row.pack(fill="x", padx=16, pady=(0, 4))
 
-        ctk.CTkLabel(cfg_row, text="Worker Threads:", font=ctk.CTkFont(size=12),
+        ctk.CTkLabel(cfg_row, text="Worker Threads:", font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                       text_color=COLORS["text"]).pack(side="left")
         self.threads_var = ctk.StringVar(value="5")
         ctk.CTkEntry(
             cfg_row, textvariable=self.threads_var, width=60, height=30,
             fg_color=COLORS["input_bg"], border_color=COLORS["border"],
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
         ).pack(side="left", padx=(8, 0))
 
         usernames_file = os.path.join(SCRIPT_DIR, "data", "usernames.txt")
         file_frame = ctk.CTkFrame(config_card, fg_color="transparent")
         file_frame.pack(fill="x", padx=16, pady=(0, 12))
 
-        ctk.CTkLabel(file_frame, text="Usernames File:", font=ctk.CTkFont(size=12),
+        ctk.CTkLabel(file_frame, text="Usernames File:", font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                       text_color=COLORS["text"]).pack(side="left")
         self.file_var = ctk.StringVar(value=usernames_file)
         ctk.CTkEntry(
             file_frame, textvariable=self.file_var, height=30,
             fg_color=COLORS["input_bg"], border_color=COLORS["border"],
-            font=ctk.CTkFont(size=11),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
         ).pack(side="left", padx=(8, 4), fill="x", expand=True)
         ctk.CTkButton(
             file_frame, text="Browse", width=80, height=30,
-            corner_radius=6, font=ctk.CTkFont(size=11),
+            corner_radius=6, font=ctk.CTkFont(family=FONT_FAMILY, size=11),
             fg_color=COLORS["border"], hover_color=COLORS["accent_dim"],
             command=self._browse_file,
         ).pack(side="left")
@@ -1998,7 +2001,7 @@ class AutoScanPage(ctk.CTkFrame):
         self.start_btn = ctk.CTkButton(
             action_frame, text="Start Scan", height=44,
             corner_radius=10,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
             fg_color=COLORS["success"],
             hover_color="#00b368",
             text_color="#000000",
@@ -2009,7 +2012,7 @@ class AutoScanPage(ctk.CTkFrame):
         self.stop_btn = ctk.CTkButton(
             action_frame, text="Stop", height=44,
             corner_radius=10,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
             fg_color=COLORS["error"],
             hover_color="#cc0000",
             command=self._stop_scan,
@@ -2022,7 +2025,7 @@ class AutoScanPage(ctk.CTkFrame):
 
         self.progress_label = ctk.CTkLabel(
             progress_card, text="Ready",
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=13),
             text_color=COLORS["text_dim"],
         )
         self.progress_label.pack(anchor="w", padx=16, pady=(10, 4))
@@ -2247,7 +2250,7 @@ class GeneratePage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             scroll, text="Generate Usernames",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=28, weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 20))
 
@@ -2256,14 +2259,14 @@ class GeneratePage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             card, text="Configuration",
-            font=ctk.CTkFont(size=15, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w", padx=16, pady=(12, 8))
 
         row1 = ctk.CTkFrame(card, fg_color="transparent")
         row1.pack(fill="x", padx=16, pady=4)
 
-        ctk.CTkLabel(row1, text="Character Set:", font=ctk.CTkFont(size=12),
+        ctk.CTkLabel(row1, text="Character Set:", font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                       text_color=COLORS["text"]).pack(side="left")
         self.charset_var = ctk.StringVar(value="both")
         ctk.CTkOptionMenu(
@@ -2272,33 +2275,33 @@ class GeneratePage(ctk.CTkFrame):
             width=120, height=30, corner_radius=6,
             fg_color=COLORS["input_bg"],
             button_color=COLORS["border"],
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
         ).pack(side="left", padx=(8, 0))
 
         row2 = ctk.CTkFrame(card, fg_color="transparent")
         row2.pack(fill="x", padx=16, pady=4)
 
         for label, default, attr in [("Min Length:", "4", "min_len"), ("Max Length:", "6", "max_len"), ("Count:", "1000", "count")]:
-            ctk.CTkLabel(row2, text=label, font=ctk.CTkFont(size=12),
+            ctk.CTkLabel(row2, text=label, font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                           text_color=COLORS["text"]).pack(side="left", padx=(0, 4))
             var = ctk.StringVar(value=default)
             setattr(self, f"_{attr}_var", var)
             ctk.CTkEntry(
                 row2, textvariable=var, width=70, height=30,
                 fg_color=COLORS["input_bg"], border_color=COLORS["border"],
-                font=ctk.CTkFont(size=12),
+                font=ctk.CTkFont(family=FONT_FAMILY, size=12),
             ).pack(side="left", padx=(0, 12))
 
         row3 = ctk.CTkFrame(card, fg_color="transparent")
         row3.pack(fill="x", padx=16, pady=(4, 12))
 
-        ctk.CTkLabel(row3, text="Prefix:", font=ctk.CTkFont(size=12),
+        ctk.CTkLabel(row3, text="Prefix:", font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                       text_color=COLORS["text"]).pack(side="left")
         self.prefix_var = ctk.StringVar(value="")
         ctk.CTkEntry(
             row3, textvariable=self.prefix_var, width=150, height=30,
             fg_color=COLORS["input_bg"], border_color=COLORS["border"],
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
         ).pack(side="left", padx=(8, 0))
 
         action_frame = ctk.CTkFrame(scroll, fg_color="transparent")
@@ -2307,7 +2310,7 @@ class GeneratePage(ctk.CTkFrame):
         ctk.CTkButton(
             action_frame, text="Generate", height=44,
             corner_radius=10,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dim"],
             command=self._generate,
@@ -2316,7 +2319,7 @@ class GeneratePage(ctk.CTkFrame):
         ctk.CTkButton(
             action_frame, text="Save to File", height=44,
             corner_radius=10,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
             fg_color=COLORS["success"],
             hover_color="#00b368",
             text_color="#000000",
@@ -2328,7 +2331,7 @@ class GeneratePage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             result_card, text="Generated Usernames",
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w", padx=16, pady=(10, 4))
 
@@ -2336,7 +2339,7 @@ class GeneratePage(ctk.CTkFrame):
             result_card,
             fg_color=COLORS["input_bg"],
             text_color=COLORS["text"],
-            font=ctk.CTkFont(family="Consolas", size=11),
+            font=ctk.CTkFont(family=FONT_FAMILY_MONO, size=11),
             corner_radius=6,
             border_width=1,
             border_color=COLORS["border"],
@@ -2418,7 +2421,7 @@ class AccountsPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             scroll, text="Accounts",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=28, weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 20))
 
@@ -2429,10 +2432,10 @@ class AccountsPage(ctk.CTkFrame):
         header_row.pack(fill="x", padx=16, pady=(12, 4))
 
         ctk.CTkLabel(header_row, text="Username",
-                      font=ctk.CTkFont(size=12, weight="bold"),
+                      font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
                       text_color=COLORS["accent"], width=250, anchor="w").pack(side="left")
         ctk.CTkLabel(header_row, text="Email",
-                      font=ctk.CTkFont(size=12, weight="bold"),
+                      font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
                       text_color=COLORS["accent"], anchor="w").pack(side="left", padx=(20, 0))
 
         ctk.CTkFrame(table_card, fg_color=COLORS["border"], height=1).pack(fill="x", padx=16, pady=(0, 4))
@@ -2458,12 +2461,12 @@ class AccountsPage(ctk.CTkFrame):
         self.row_widgets = []
         self.empty_label = ctk.CTkLabel(
             self.table_inner, text="No accounts found in data/accounts.txt",
-            font=ctk.CTkFont(size=12), text_color=COLORS["text_dim"],
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12), text_color=COLORS["text_dim"],
         )
 
         self.status_label = ctk.CTkLabel(
             table_card, text="",
-            font=ctk.CTkFont(size=11), text_color=COLORS["text_dim"],
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11), text_color=COLORS["text_dim"],
         )
         self.status_label.pack(anchor="w", padx=16, pady=(0, 8))
 
@@ -2474,7 +2477,7 @@ class AccountsPage(ctk.CTkFrame):
         self.login_btn = ctk.CTkButton(
             btn_frame, text="Login", height=44,
             corner_radius=10,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dim"],
             command=self._login_account,
@@ -2484,7 +2487,7 @@ class AccountsPage(ctk.CTkFrame):
         self.inbox_btn = ctk.CTkButton(
             btn_frame, text="Open Inbox", height=44,
             corner_radius=10,
-            font=ctk.CTkFont(size=14, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
             fg_color=COLORS["success"],
             hover_color="#00b368",
             text_color="#000000",
@@ -2552,10 +2555,10 @@ class AccountsPage(ctk.CTkFrame):
             row.pack_propagate(False)
 
             ctk.CTkLabel(row, text=acct["username"],
-                          font=ctk.CTkFont(size=12),
+                          font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                           text_color=COLORS["text"], width=250, anchor="w").pack(side="left", padx=(10, 0))
             ctk.CTkLabel(row, text=acct["email"] or "—",
-                          font=ctk.CTkFont(size=12),
+                          font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                           text_color=COLORS["text_dim"], anchor="w").pack(side="left", padx=(20, 0))
 
             row.bind("<Button-1>", lambda e, idx=i: self._select(idx))
@@ -2668,7 +2671,7 @@ class SettingsPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             scroll, text="Settings",
-            font=ctk.CTkFont(size=28, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=28, weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 20))
 
@@ -2677,14 +2680,14 @@ class SettingsPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             theme_card, text="Theme",
-            font=ctk.CTkFont(size=15, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w", padx=16, pady=(12, 8))
 
         theme_row = ctk.CTkFrame(theme_card, fg_color="transparent")
         theme_row.pack(fill="x", padx=16, pady=4)
 
-        ctk.CTkLabel(theme_row, text="Preset:", font=ctk.CTkFont(size=12),
+        ctk.CTkLabel(theme_row, text="Preset:", font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                       text_color=COLORS["text"]).pack(side="left")
         self.theme_var = ctk.StringVar(value=self.app.config.get("theme", "Midnight"))
         self.theme_menu = ctk.CTkOptionMenu(
@@ -2693,7 +2696,7 @@ class SettingsPage(ctk.CTkFrame):
             width=160, height=30, corner_radius=6,
             fg_color=COLORS["input_bg"],
             button_color=COLORS["border"],
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
             command=self._on_theme_change,
         )
         self.theme_menu.pack(side="left", padx=(8, 0))
@@ -2712,7 +2715,7 @@ class SettingsPage(ctk.CTkFrame):
         ctk.CTkButton(
             theme_card, text="Apply Theme", height=36,
             corner_radius=8,
-            font=ctk.CTkFont(size=12, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dim"],
             command=self._apply_theme,
@@ -2723,14 +2726,14 @@ class SettingsPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             general_card, text="General",
-            font=ctk.CTkFont(size=15, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w", padx=16, pady=(12, 8))
 
         row = ctk.CTkFrame(general_card, fg_color="transparent")
         row.pack(fill="x", padx=16, pady=4)
 
-        ctk.CTkLabel(row, text="Headless Mode:", font=ctk.CTkFont(size=12),
+        ctk.CTkLabel(row, text="Headless Mode:", font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                       text_color=COLORS["text"]).pack(side="left")
         self.headless_var = ctk.BooleanVar(value=self.app.config.get("headless", False))
         ctk.CTkSwitch(
@@ -2744,13 +2747,13 @@ class SettingsPage(ctk.CTkFrame):
         row2 = ctk.CTkFrame(general_card, fg_color="transparent")
         row2.pack(fill="x", padx=16, pady=(4, 12))
 
-        ctk.CTkLabel(row2, text="Username Input Delay (s):", font=ctk.CTkFont(size=12),
+        ctk.CTkLabel(row2, text="Username Input Delay (s):", font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                       text_color=COLORS["text"]).pack(side="left")
         self.delay_var = ctk.StringVar(value=str(self.app.config.get("username_input_delay", 2)))
         ctk.CTkEntry(
             row2, textvariable=self.delay_var, width=60, height=30,
             fg_color=COLORS["input_bg"], border_color=COLORS["border"],
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
         ).pack(side="left", padx=(8, 0))
 
         notif_card = ctk.CTkFrame(scroll, fg_color=COLORS["card"], corner_radius=10)
@@ -2758,7 +2761,7 @@ class SettingsPage(ctk.CTkFrame):
 
         ctk.CTkLabel(
             notif_card, text="Notifications",
-            font=ctk.CTkFont(size=15, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w", padx=16, pady=(12, 8))
 
@@ -2771,21 +2774,21 @@ class SettingsPage(ctk.CTkFrame):
         for label, key in fields:
             f = ctk.CTkFrame(notif_card, fg_color="transparent")
             f.pack(fill="x", padx=16, pady=4)
-            ctk.CTkLabel(f, text=label, font=ctk.CTkFont(size=12),
+            ctk.CTkLabel(f, text=label, font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                           text_color=COLORS["text"], width=180, anchor="w").pack(side="left")
             var = ctk.StringVar(value=self.app.config.get(key, ""))
             self._entries[key] = var
             ctk.CTkEntry(
                 f, textvariable=var, height=30,
                 fg_color=COLORS["input_bg"], border_color=COLORS["border"],
-                font=ctk.CTkFont(size=11),
+                font=ctk.CTkFont(family=FONT_FAMILY, size=11),
                 show="*" if "token" in key.lower() else "",
             ).pack(side="left", padx=(8, 0), fill="x", expand=True)
 
         ctk.CTkButton(
             notif_card, text="Save Settings", height=40,
             corner_radius=10,
-            font=ctk.CTkFont(size=13, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=13, weight="bold"),
             fg_color=COLORS["accent"],
             hover_color=COLORS["accent_dim"],
             command=self._save,
@@ -2796,7 +2799,7 @@ class SettingsPage(ctk.CTkFrame):
             w.destroy()
         ctk.CTkLabel(
             self.preview_frame, text="Preview",
-            font=ctk.CTkFont(size=11, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11, weight="bold"),
             text_color=COLORS["text_dim"],
         ).pack(anchor="w", pady=(0, 4))
 
@@ -2810,7 +2813,7 @@ class SettingsPage(ctk.CTkFrame):
             swatch.pack_propagate(False)
         hint = ctk.CTkLabel(
             self.preview_frame, text="Current active colors",
-            font=ctk.CTkFont(size=10),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=10),
             text_color=COLORS["text_dim"],
         )
         hint.pack(anchor="w", pady=(4, 0))
@@ -2835,7 +2838,7 @@ class SettingsPage(ctk.CTkFrame):
             btn = ctk.CTkButton(
                 cell, text=label, width=90, height=24,
                 corner_radius=4,
-                font=ctk.CTkFont(size=10),
+                font=ctk.CTkFont(family=FONT_FAMILY, size=10),
                 fg_color=COLORS["input_bg"],
                 hover_color=COLORS["card_hover"],
                 command=lambda k=key, p=preview: self._pick_color(k, p),
@@ -2915,13 +2918,13 @@ class App(ctk.CTk):
 
         ctk.CTkLabel(
             logo_frame, text="CPZC",
-            font=ctk.CTkFont(size=22, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=22, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             logo_frame, text="Auto Claimer",
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
             text_color=COLORS["text_dim"],
         ).pack(anchor="w")
 
@@ -3005,12 +3008,12 @@ class App(ctk.CTk):
         logo_frame.pack(fill="x", padx=16, pady=(20, 24))
         ctk.CTkLabel(
             logo_frame, text="CPZC",
-            font=ctk.CTkFont(size=22, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=22, weight="bold"),
             text_color=COLORS["accent"],
         ).pack(anchor="w")
         ctk.CTkLabel(
             logo_frame, text="Auto Claimer",
-            font=ctk.CTkFont(size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
             text_color=COLORS["text_dim"],
         ).pack(anchor="w")
 

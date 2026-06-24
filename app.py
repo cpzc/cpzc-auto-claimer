@@ -924,6 +924,7 @@ class TikTokSeleniumClaimer:
             "tformemail.com", "mergencmail.com", "protecemail.com",
             "ervmail.com", "espismail.com", "spitalitmail.com",
             "maillsk.com", "maillv.com", "oonmail.com", "znemail.com",
+            "sabesmail.com", "bonjourfmail.com", "reevalmail.com", "bientotmail.com",
         )
 
     def _fill_firstmail_credentials(self, email, email_password):

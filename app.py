@@ -1762,19 +1762,13 @@ class SidebarButton(ctk.CTkButton):
 
 
 class LogPanel(ctk.CTkFrame):
-    _PREFIXES = {
-        "\u2705": ("success", "\u2705"),
-        "\u274c": ("error", "\u274c"),
-        "\u26a0\ufe0f": ("warning", "\u26a0\ufe0f"),
-        "\U0001f50d": ("accent", "\U0001f50d"),
-        "\U0001f4e8": ("accent", "\U0001f4e8"),
-        "\U0001f4e7": ("accent", "\U0001f4e7"),
-        "\U0001f512": ("accent", "\U0001f512"),
-        "\U0001f3af": ("success", "\U0001f3af"),
-        "\U0001f680": ("success", "\U0001f680"),
-        "\u2139\ufe0f": ("text_dim", "\u2139\ufe0f"),
-        "\U0001f4cb": ("text_dim", "\U0001f4cb"),
+    _ANSI_COLORS = {
+        "30": "#888888", "31": "#cf6679", "32": "#03dac6", "33": "#ffab40",
+        "34": "#82b1ff", "35": "#ea80fc", "36": "#80cbc4", "37": "#e8dff5",
+        "90": "#555555", "91": "#ff5252", "92": "#69f0ae", "93": "#ffd740",
+        "94": "#82b1ff", "95": "#ea80fc", "96": "#a7ffeb", "97": "#ffffff",
     }
+    _ANSI_RE = __import__("re").compile(r"\x1b\[([0-9;]*)m")
 
     def __init__(self, master, **kwargs):
         super().__init__(master, fg_color=COLORS["card"], corner_radius=10, **kwargs)
@@ -1807,7 +1801,15 @@ class LogPanel(ctk.CTkFrame):
         )
         self.textbox.pack(fill="both", expand=True, padx=10, pady=(6, 10))
 
+        self._setup_tags()
         self._poll()
+
+    def _setup_tags(self):
+        tw = self.textbox._textbox
+        tw.tag_configure("timestamp", foreground="#555555")
+        for code, color in self._ANSI_COLORS.items():
+            tw.tag_configure(f"ansi_{code}", foreground=color)
+        tw.tag_configure("ansi_reset", foreground=COLORS["text"])
 
     def _poll(self):
         if _app_instance and hasattr(_app_instance, "_log_queue"):
@@ -1817,10 +1819,32 @@ class LogPanel(ctk.CTkFrame):
         self.after(50, self._poll)
 
     def _append(self, message):
+        tw = self.textbox._textbox
         self.textbox.configure(state="normal")
         timestamp = datetime.now().strftime("%H:%M:%S")
-        self.textbox.insert("end", f"[{timestamp}] {message}\n")
-        self.textbox.see("end")
+        tw.insert("end", f"[{timestamp}] ", ("timestamp",))
+
+        parts = self._ANSI_RE.split(message)
+        codes = self._ANSI_RE.findall(message)
+        current_tags = []
+
+        for i, part in enumerate(parts):
+            if not part:
+                continue
+            if i < len(codes):
+                code_str = codes[i]
+                if code_str == "0" or code_str == "":
+                    current_tags = []
+                else:
+                    for c in code_str.split(";"):
+                        if c in self._ANSI_COLORS:
+                            current_tags = [f"ansi_{c}"]
+            if part:
+                tags = tuple(current_tags) if current_tags else ()
+                tw.insert("end", part, tags)
+
+        tw.insert("end", "\n")
+        tw.see("end")
         self.textbox.configure(state="disabled")
 
     def log(self, message):
@@ -1828,7 +1852,7 @@ class LogPanel(ctk.CTkFrame):
 
     def clear(self):
         self.textbox.configure(state="normal")
-        self.textbox.delete("1.0", "end")
+        self.textbox._textbox.delete("1.0", "end")
         self.textbox.configure(state="disabled")
 
 
@@ -2993,21 +3017,41 @@ class ConsolePage(ctk.CTkFrame):
         )
         self.textbox.pack(fill="both", expand=True, padx=20, pady=(0, 20))
 
+        self._setup_tags()
         self._last_len = 0
         self._poll()
 
+    def _setup_tags(self):
+        tw = self.textbox._textbox
+        tw.tag_configure("timestamp", foreground="#555555")
+        for code, color in LogPanel._ANSI_COLORS.items():
+            tw.tag_configure(f"ansi_{code}", foreground=color)
+
     def _poll(self):
         if self.app.log_panel:
-            content = self.app.log_panel.textbox.get("1.0", "end").rstrip()
-            lines = content.split("\n")
-            if len(lines) != self._last_len:
-                self._last_len = len(lines)
-                count = max(0, len(lines) - 1) if content else 0
+            src = self.app.log_panel.textbox._textbox
+            line_count = int(src.index("end-1c").split(".")[0])
+            if line_count != self._last_len:
+                self._last_len = line_count
+                count = max(0, line_count - 1)
                 self.counter_label.configure(text=f"{count} lines")
+                dst = self.textbox._textbox
                 self.textbox.configure(state="normal")
-                self.textbox.delete("1.0", "end")
-                self.textbox.insert("1.0", content)
-                self.textbox.see("end")
+                dst.delete("1.0", "end")
+                for tag_name in src.tag_names():
+                    if tag_name == "sel":
+                        continue
+                    ranges = src.tag_ranges(tag_name)
+                    for i in range(0, len(ranges), 2):
+                        dst.tag_add(tag_name, ranges[i], ranges[i + 1])
+                dst.insert("1.0", src.get("1.0", "end"))
+                for tag_name in src.tag_names():
+                    if tag_name == "sel":
+                        continue
+                    ranges = src.tag_ranges(tag_name)
+                    for i in range(0, len(ranges), 2):
+                        dst.tag_add(tag_name, ranges[i], ranges[i + 1])
+                dst.see("end")
                 self.textbox.configure(state="disabled")
         self.after(100, self._poll)
 

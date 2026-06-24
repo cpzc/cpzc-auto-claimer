@@ -385,6 +385,9 @@ class TikTokSeleniumClaimer:
         self.claimed = False
         self.stop_scan = threading.Event()
         self.username_input = None
+        self.scan_scanned = 0
+        self.scan_claimed = 0
+        self.scan_errors = 0
         self.edit_profile_modal_open = False
         self.username_input_selectors = [
             "input[placeholder*='sername']",
@@ -1496,6 +1499,9 @@ class TikTokSeleniumClaimer:
 
         self.claimed = False
         self.stop_scan.clear()
+        self.scan_scanned = 0
+        self.scan_claimed = 0
+        self.scan_errors = 0
 
         if threads is None:
             threads_prompt = (
@@ -1564,6 +1570,7 @@ class TikTokSeleniumClaimer:
             with lock:
                 checked += 1
                 current = checked
+                self.scan_scanned = checked
             update_title()
 
             _, available = result
@@ -1582,6 +1589,7 @@ class TikTokSeleniumClaimer:
                 if success:
                     safe_print(f"     🔗 https://www.tiktok.com/@{username}")
                     self.claimed = True
+                    self.scan_claimed += 1
                     update_title()
                     try:
                         with open(claim_log, 'a') as f:
@@ -1595,6 +1603,7 @@ class TikTokSeleniumClaimer:
                 safe_print(f"  ❌ [{current}/{total}] @{username}")
             else:
                 with lock:
+                    self.scan_errors += 1
                     wait_secs = min(15, max(3, checked // 20 * 2))
                     error_cooldown = time.time() + wait_secs
                     safe_print(f"  ⚠️ [{current}/{total}] @{username} — error (waiting {wait_secs}s)")
@@ -1884,6 +1893,8 @@ class DashboardPage(ctk.CTkFrame):
         self.claimed_label = self._stat_card(stats_frame, "Claimed", "0", 1)
         self.errors_label = self._stat_card(stats_frame, "Errors", "0", 2)
 
+        self._poll_stats()
+
         ctk.CTkLabel(
             scroll, text="Quick Actions",
             font=ctk.CTkFont(family=FONT_FAMILY, size=16, weight="bold"),
@@ -1954,6 +1965,13 @@ class DashboardPage(ctk.CTkFrame):
         self.scanned_label.configure(text=str(scanned))
         self.claimed_label.configure(text=str(claimed))
         self.errors_label.configure(text=str(errors))
+
+    def _poll_stats(self):
+        if self.app.claimer:
+            self.scanned_label.configure(text=str(self.app.claimer.scan_scanned))
+            self.claimed_label.configure(text=str(self.app.claimer.scan_claimed))
+            self.errors_label.configure(text=str(self.app.claimer.scan_errors))
+        self.after(500, self._poll_stats)
 
 
 class AutoScanPage(ctk.CTkFrame):

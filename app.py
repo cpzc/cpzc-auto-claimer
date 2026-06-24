@@ -2967,6 +2967,13 @@ class ConsolePage(ctk.CTkFrame):
             text_color=COLORS["text"],
         ).pack(side="left")
 
+        self.counter_label = ctk.CTkLabel(
+            header, text="0 lines",
+            font=ctk.CTkFont(family=FONT_FAMILY, size=13),
+            text_color=COLORS["text_dim"],
+        )
+        self.counter_label.pack(side="left", padx=(12, 0))
+
         ctk.CTkButton(
             header, text="Clear", width=80, height=32,
             fg_color=COLORS["border"], hover_color=COLORS["error"],
@@ -2995,6 +3002,8 @@ class ConsolePage(ctk.CTkFrame):
             lines = content.split("\n")
             if len(lines) != self._last_len:
                 self._last_len = len(lines)
+                count = max(0, len(lines) - 1) if content else 0
+                self.counter_label.configure(text=f"{count} lines")
                 self.textbox.configure(state="normal")
                 self.textbox.delete("1.0", "end")
                 self.textbox.insert("1.0", content)

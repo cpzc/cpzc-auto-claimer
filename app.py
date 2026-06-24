@@ -912,6 +912,13 @@ class TikTokSeleniumClaimer:
         except Exception:
             pass
 
+    @staticmethod
+    def _is_firstmail_email(email):
+        if not email or "@" not in email:
+            return False
+        domain = email.split("@")[-1].lower()
+        return domain in ("firstmail.ltd", "firstmail.online")
+
     def _fill_firstmail_credentials(self, email, email_password):
         self.driver.execute_script("""
             var emailInput = document.getElementById('email-desktop') || document.querySelector('input[name="email"]');
@@ -948,6 +955,9 @@ class TikTokSeleniumClaimer:
     def _get_code_from_inbox(self, email, email_password, pause_fn=None):
         if pause_fn is None:
             pause_fn = input
+        if not self._is_firstmail_email(email):
+            print(Fore.RED + f"   Only FirstMail emails can be used for inbox (got: {email})")
+            return None
         print(Fore.CYAN + "   📧 Opening FirstMail inbox in new tab...")
         original_window = self.driver.current_window_handle
 
@@ -1019,6 +1029,9 @@ class TikTokSeleniumClaimer:
     def open_inbox(self, email, email_password, pause_fn=None):
         if pause_fn is None:
             pause_fn = input
+        if not self._is_firstmail_email(email):
+            print(Fore.RED + f"   Only FirstMail emails can be used for inbox (got: {email})")
+            return False
         print(Fore.CYAN + "\nOpening FirstMail webmail...")
         try:
             self.driver.get("https://firstmail.ltd/ru-RU/webmail/login")
@@ -2625,6 +2638,9 @@ class AccountsPage(ctk.CTkFrame):
         acct = self.accounts[self.selected_idx]
         if not acct["email"] or not acct["email_pass"]:
             messagebox.showwarning("No Email", "This account has no email credentials")
+            return
+        if not self.app.claimer._is_firstmail_email(acct["email"]):
+            messagebox.showwarning("Not FirstMail", f"Only FirstMail emails can be used for inbox.\nGot: {acct['email']}")
             return
         if not self._ensure_driver():
             return

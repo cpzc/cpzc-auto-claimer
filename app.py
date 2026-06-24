@@ -138,24 +138,30 @@ def send_claim_notification(username, config):
 
 
 def send_captcha_notification(config, context=""):
-    message = f"🔒 CAPTCHA requires manual solving!\n{context}\nPlease solve it in the browser."
+    message = f"CAPTCHA requires manual solving!\n{context}\nPlease solve it in the browser."
     webhook = config.get("discord_webhook_url", "").strip()
     if webhook:
         try:
-            requests.post(webhook, json={"content": message}, timeout=10)
-        except Exception:
-            pass
+            resp = requests.post(webhook, json={"content": message}, timeout=10)
+            print(Fore.GREEN + f"   Discord notification sent (HTTP {resp.status_code})")
+        except Exception as e:
+            print(Fore.RED + f"   Discord notification failed: {e}")
+    else:
+        print(Fore.YELLOW + "   No Discord webhook URL configured")
     bot_token = config.get("telegram_bot_token", "").strip()
     chat_id = config.get("telegram_chat_id", "").strip()
     if bot_token and chat_id:
         try:
-            requests.post(
+            resp = requests.post(
                 f"https://api.telegram.org/bot{bot_token}/sendMessage",
                 json={"chat_id": chat_id, "text": message},
                 timeout=10,
             )
-        except Exception:
-            pass
+            print(Fore.GREEN + f"   Telegram notification sent (HTTP {resp.status_code})")
+        except Exception as e:
+            print(Fore.RED + f"   Telegram notification failed: {e}")
+    else:
+        print(Fore.YELLOW + "   No Telegram bot token/chat ID configured")
 
 
 def create_account(claim_driver=None, input_fn=None, pause_fn=None):
@@ -631,23 +637,27 @@ class TikTokSeleniumClaimer:
                         var iframes = document.querySelectorAll('iframe');
                         for (var i = 0; i < iframes.length; i++) {
                             var src = (iframes[i].src || '').toLowerCase();
-                            if (src.includes('captcha') || src.includes('challenge') || src.includes('slider') || src.includes('verify')) {
+                            if (src.includes('captcha') || src.includes('challenge') || src.includes('slider') || src.includes('verify') || src.includes('geetest') || src.includes('dk')) {
                                 return true;
                             }
                         }
-                        var captchaEls = document.querySelectorAll('[class*="captcha"], [class*="challenge"], [id*="captcha"], [class*="slider"], [class*="secsdk"]');
+                        var captchaEls = document.querySelectorAll('[class*="captcha"], [class*="challenge"], [id*="captcha"], [class*="slider"], [class*="secsdk"], [class*="geetest"], [class*="captcha_verify"], [id*="captcha_"], [class*="secsdk-captcha"]');
                         for (var j = 0; j < captchaEls.length; j++) {
                             if (captchaEls[j].offsetParent !== null) return true;
                         }
+                        var allText = document.body.innerText.toLowerCase();
+                        if (allText.includes('drag the slider') || allText.includes('slide to verify') || allText.includes('verify you are human')) {
+                            return true;
+                        }
                         return false;
                     """)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(Fore.RED + f"   CAPTCHA detection error: {e}")
 
                 if has_captcha:
-                    print(Fore.YELLOW + "   🔒 CAPTCHA detected — please solve the slider puzzle in the browser")
+                    print(Fore.YELLOW + "   CAPTCHA detected - please solve the slider puzzle in the browser")
                     if config:
-                        send_captcha_notification(config, f"Account login verification for TikTok")
+                        send_captcha_notification(config, "Account login verification for TikTok")
                     pause_fn(Fore.YELLOW + "   Solve the CAPTCHA puzzle in the browser, then press Enter here to continue...")
                     time.sleep(2)
                 else:
@@ -826,23 +836,27 @@ class TikTokSeleniumClaimer:
                         var iframes = document.querySelectorAll('iframe');
                         for (var i = 0; i < iframes.length; i++) {
                             var src = (iframes[i].src || '').toLowerCase();
-                            if (src.includes('captcha') || src.includes('challenge') || src.includes('slider') || src.includes('verify')) {
+                            if (src.includes('captcha') || src.includes('challenge') || src.includes('slider') || src.includes('verify') || src.includes('geetest') || src.includes('dk')) {
                                 return true;
                             }
                         }
-                        var captchaEls = document.querySelectorAll('[class*="captcha"], [class*="challenge"], [id*="captcha"], [class*="slider"], [class*="secsdk"]');
+                        var captchaEls = document.querySelectorAll('[class*="captcha"], [class*="challenge"], [id*="captcha"], [class*="slider"], [class*="secsdk"], [class*="geetest"], [class*="captcha_verify"], [id*="captcha_"], [class*="secsdk-captcha"]');
                         for (var j = 0; j < captchaEls.length; j++) {
                             if (captchaEls[j].offsetParent !== null) return true;
                         }
+                        var allText = document.body.innerText.toLowerCase();
+                        if (allText.includes('drag the slider') || allText.includes('slide to verify') || allText.includes('verify you are human')) {
+                            return true;
+                        }
                         return false;
                     """)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(Fore.RED + f"   Post-code CAPTCHA detection error: {e}")
 
                 if post_captcha:
-                    print(Fore.YELLOW + "   🔒 CAPTCHA appeared after code submission — please solve the slider puzzle")
+                    print(Fore.YELLOW + "   CAPTCHA appeared after code submission - please solve the slider puzzle")
                     if config:
-                        send_captcha_notification(config, f"Post-code CAPTCHA for TikTok verification")
+                        send_captcha_notification(config, "Post-code CAPTCHA for TikTok verification")
                     pause_fn(Fore.YELLOW + "   Solve the CAPTCHA in the browser, then press Enter here to continue...")
                     time.sleep(3)
 

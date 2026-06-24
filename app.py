@@ -2953,6 +2953,56 @@ class SettingsPage(ctk.CTkFrame):
             json.dump(cfg, f, indent=4)
 
 
+class ConsolePage(ctk.CTkFrame):
+    def __init__(self, master, app, **kwargs):
+        super().__init__(master, fg_color="transparent", **kwargs)
+        self.app = app
+
+        header = ctk.CTkFrame(self, fg_color="transparent")
+        header.pack(fill="x", padx=20, pady=(20, 10))
+
+        ctk.CTkLabel(
+            header, text="Console",
+            font=ctk.CTkFont(family=FONT_FAMILY, size=28, weight="bold"),
+            text_color=COLORS["text"],
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            header, text="Clear", width=80, height=32,
+            fg_color=COLORS["border"], hover_color=COLORS["error"],
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
+            command=lambda: self.app.log_panel.clear(),
+        ).pack(side="right")
+
+        self.textbox = ctk.CTkTextbox(
+            self,
+            fg_color=COLORS["input_bg"],
+            text_color=COLORS["text"],
+            font=ctk.CTkFont(family=FONT_FAMILY_MONO, size=12),
+            corner_radius=10,
+            border_width=1,
+            border_color=COLORS["border"],
+            state="disabled",
+        )
+        self.textbox.pack(fill="both", expand=True, padx=20, pady=(0, 20))
+
+        self._last_len = 0
+        self._poll()
+
+    def _poll(self):
+        if self.app.log_panel:
+            content = self.app.log_panel.textbox.get("1.0", "end").rstrip()
+            lines = content.split("\n")
+            if len(lines) != self._last_len:
+                self._last_len = len(lines)
+                self.textbox.configure(state="normal")
+                self.textbox.delete("1.0", "end")
+                self.textbox.insert("1.0", content)
+                self.textbox.see("end")
+                self.textbox.configure(state="disabled")
+        self.after(100, self._poll)
+
+
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -2994,6 +3044,7 @@ class App(ctk.CTk):
             ("scan", "Auto Scan", "\u26B2"),
             ("accounts", "Accounts", "\u263A"),
             ("generate", "Generate", "\u2726"),
+            ("console", "Console", "\u2328"),
             ("settings", "Settings", "\u2699"),
         ]
         for page_id, label, icon in nav_items:
@@ -3025,6 +3076,7 @@ class App(ctk.CTk):
         self.pages["scan"] = AutoScanPage(self.page_container, self)
         self.pages["accounts"] = AccountsPage(self.page_container, self)
         self.pages["generate"] = GeneratePage(self.page_container, self)
+        self.pages["console"] = ConsolePage(self.page_container, self)
         self.pages["settings"] = SettingsPage(self.page_container, self)
 
         self.active_page = None
@@ -3038,6 +3090,10 @@ class App(ctk.CTk):
             btn.set_active(name == page_id)
         self.pages[page_id].grid(row=0, column=0, sticky="nsew")
         self.active_page = page_id
+        if page_id == "console":
+            self.log_frame.grid_forget()
+        else:
+            self.log_frame.grid(row=1, column=0, sticky="sew", padx=10, pady=(0, 10))
         if page_id == "scan" and self.claimer:
             self.pages["scan"]._count_username_file()
 
@@ -3083,6 +3139,7 @@ class App(ctk.CTk):
             ("scan", "Auto Scan", "\u26B2"),
             ("accounts", "Accounts", "\u263A"),
             ("generate", "Generate", "\u2726"),
+            ("console", "Console", "\u2328"),
             ("settings", "Settings", "\u2699"),
         ]
         for page_id, label, icon in nav_items:
@@ -3104,6 +3161,7 @@ class App(ctk.CTk):
         self.pages["scan"] = AutoScanPage(self.page_container, self)
         self.pages["accounts"] = AccountsPage(self.page_container, self)
         self.pages["generate"] = GeneratePage(self.page_container, self)
+        self.pages["console"] = ConsolePage(self.page_container, self)
         self.pages["settings"] = SettingsPage(self.page_container, self)
 
         self.log_panel.destroy()

@@ -1837,7 +1837,7 @@ class DashboardPage(ctk.CTkFrame):
 
         steps = [
             "1.  Place your usernames in  data/usernames.txt  (one per line)",
-            "2.  Go to  Auto Scan  and log in to TikTok (manual QR, cookies, or credentials)",
+            "2.  Go to  Auto Scan  and log in to TikTok (manual QR, cookies, or create account)",
             "3.  Configure worker threads and click  Start Scan",
             "4.  The app scans via HTTP and auto-claims available names via the browser",
             "5.  Check  output/claimed.txt  for claimed usernames",
@@ -2282,7 +2282,6 @@ class AccountsPage(ctk.CTkFrame):
             ("Cookies (JSON)", "cookies_json"),
             ("Cookies (sessions)", "cookies_session"),
             ("Create Account", "create"),
-            ("Email:Pass File", "credentials"),
         ]
         self.login_buttons = []
         for i, (text, method) in enumerate(login_methods):
@@ -2638,14 +2637,6 @@ class AccountsPage(ctk.CTkFrame):
                     logged_in = create_account(
                         self.app.claimer.driver, input_fn=gui_input, pause_fn=gui_pause
                     )
-
-                elif method == "credentials":
-                    path = os.path.join(SCRIPT_DIR, "data", "accounts.txt")
-                    if not os.path.exists(path):
-                        self.app.log(f"File not found: {path}")
-                        self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
-                        return
-                    logged_in = self.app.claimer.login_with_credentials(path)
             except Exception as e:
                 self.app.log(f"Login error: {e}")
 

@@ -1719,7 +1719,7 @@ class SidebarButton(ctk.CTkButton):
     def __init__(self, master, text="", command=None, icon="", **kwargs):
         super().__init__(
             master,
-            text=f"  {icon}  {text}" if icon else text,
+            text=f" {icon}  {text}" if icon else text,
             command=command,
             fg_color="transparent",
             text_color=COLORS["text_dim"],
@@ -1727,7 +1727,7 @@ class SidebarButton(ctk.CTkButton):
             anchor="w",
             height=44,
             corner_radius=8,
-            font=ctk.CTkFont(size=13),
+            font=ctk.CTkFont(size=14),
             **kwargs,
         )
         self.active = False
@@ -2927,11 +2927,11 @@ class App(ctk.CTk):
 
         self.nav_buttons = {}
         nav_items = [
-            ("dashboard", "Dashboard", "home"),
-            ("scan", "Auto Scan", "search"),
-            ("accounts", "Accounts", "people"),
-            ("generate", "Generate", "wand"),
-            ("settings", "Settings", "gear"),
+            ("dashboard", "Dashboard", "\u2302"),
+            ("scan", "Auto Scan", "\u26B2"),
+            ("accounts", "Accounts", "\u263A"),
+            ("generate", "Generate", "\u2726"),
+            ("settings", "Settings", "\u2699"),
         ]
         for page_id, label, icon in nav_items:
             btn = SidebarButton(
@@ -3016,11 +3016,11 @@ class App(ctk.CTk):
 
         self.nav_buttons = {}
         nav_items = [
-            ("dashboard", "Dashboard", "home"),
-            ("scan", "Auto Scan", "search"),
-            ("accounts", "Accounts", "people"),
-            ("generate", "Generate", "wand"),
-            ("settings", "Settings", "gear"),
+            ("dashboard", "Dashboard", "\u2302"),
+            ("scan", "Auto Scan", "\u26B2"),
+            ("accounts", "Accounts", "\u263A"),
+            ("generate", "Generate", "\u2726"),
+            ("settings", "Settings", "\u2699"),
         ]
         for page_id, label, icon in nav_items:
             btn = SidebarButton(

@@ -39,6 +39,7 @@ FONT_FAMILY = "Segoe UI"
 FONT_FAMILY_MONO = "Cascadia Code"
 
 _ANSI_RE = __import__("re").compile(r"\x1b\[[0-9;]*m")
+_log_lock = threading.Lock()
 
 
 def _gui_print(*args, **kwargs):
@@ -47,13 +48,13 @@ def _gui_print(*args, **kwargs):
     if not msg:
         return
     if _app_instance and hasattr(_app_instance, "_log_queue"):
-        _app_instance._log_queue.append(msg)
+        with _log_lock:
+            _app_instance._log_queue.append(msg)
 
 
 _app_instance = None
 
 import builtins
-builtins._original_print = builtins.print
 builtins.print = _gui_print
 
 
@@ -116,6 +117,7 @@ def select_combobox_value(driver, field_name, value_text):
 
 
 def save_account(filepath, email, password, created_username="", mail_pass="", birthday=""):
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
     header = "email,password,username,temp_mail_password,birthday\n"
     line = f"{email},{password},{created_username},{mail_pass},{birthday}\n"
     if not os.path.exists(filepath):
@@ -526,10 +528,12 @@ class TikTokSeleniumClaimer:
         print(Fore.RED + "   All accounts failed")
         return False
 
-    def login_with_single_account(self, username, password, email=None, email_password=None, pause_fn=None, config=None):
+    def login_with_single_account(self, username, password, email=None, email_password=None, pause_fn=None, input_fn=None, config=None):
         """Login with a single username:password pair. Handles verification codes if needed."""
         if pause_fn is None:
             pause_fn = input
+        if input_fn is None:
+            input_fn = input
         print(Fore.CYAN + f"\nLogging in as {username}...")
         try:
             self.driver.get("https://www.tiktok.com/login/phone-or-email/email")
@@ -567,7 +571,7 @@ class TikTokSeleniumClaimer:
 
             if is_verification and is_login_page:
                 print(Fore.CYAN + "   🔐 Verification screen detected on login page")
-                verification_handled = self._handle_login_verification(email, email_password, pause_fn, config=config)
+                verification_handled = self._handle_login_verification(email, email_password, pause_fn, input_fn=input_fn, config=config)
                 if verification_handled:
                     logged_in_user = self.get_current_username()
                     if logged_in_user and logged_in_user.lower() != username.lower():
@@ -594,9 +598,11 @@ class TikTokSeleniumClaimer:
             print(Fore.YELLOW + f"   ❌ Error: {e}")
             return False
 
-    def _handle_login_verification(self, email=None, email_password=None, pause_fn=None, config=None):
+    def _handle_login_verification(self, email=None, email_password=None, pause_fn=None, input_fn=None, config=None):
         if pause_fn is None:
             pause_fn = input
+        if input_fn is None:
+            input_fn = input
         try:
             body_text = self.driver.find_element(By.TAG_NAME, "body").text
             if "verify" not in body_text.lower() and "really you" not in body_text.lower():
@@ -632,7 +638,7 @@ class TikTokSeleniumClaimer:
                     for div in all_divs:
                         try:
                             div_text = div.text.strip()
-                            if "@" in div_text and ("@" in div_text) and div.is_displayed():
+                            if "@" in div_text and div.is_displayed():
                                 classes = div.get_attribute("class") or ""
                                 if "item" in classes.lower() or "home" in classes.lower():
                                     email_option = div
@@ -694,7 +700,7 @@ class TikTokSeleniumClaimer:
                     if attempt == 0:
                         print(Fore.YELLOW + "\n   ⚠️  No email credentials for this account.")
                         pause_fn(Fore.YELLOW + "   A verification code was sent to the account's email. Solve CAPTCHA in browser if needed, then press Enter...")
-                    code = input(Fore.CYAN + "   Enter the 6-digit verification code: ").strip()
+                    code = input_fn(Fore.CYAN + "   Enter the 6-digit verification code: ").strip()
 
                 if not code:
                     print(Fore.RED + "   ❌ No verification code obtained")
@@ -972,6 +978,9 @@ class TikTokSeleniumClaimer:
     def _search_for_code(self):
         try:
             body_text = self.driver.find_element(By.TAG_NAME, "body").text
+            code_match = re.search(r'(?:code|verification|verify)\D*(\d{6})', body_text, re.IGNORECASE)
+            if code_match:
+                return code_match.group(1)
             codes_found = re.findall(r'\b\d{6}\b', body_text)
             if codes_found:
                 return codes_found[0]
@@ -1117,7 +1126,7 @@ class TikTokSeleniumClaimer:
 
             try:
                 self.driver.set_page_load_timeout(10)
-                self.driver.get("https://www.tiktok.com/setting")
+                self.driver.get("https://www.tiktok.com/settings")
                 time.sleep(1.5)
                 if "login" not in self.driver.current_url.lower():
                     page = self.driver.page_source
@@ -1193,7 +1202,7 @@ class TikTokSeleniumClaimer:
                     print(f"   ✅ Username appears to be available!")
                     return True, "Available"
 
-            if "video" in page_source or "followers" in page_source:
+            if "followbutton" in page_source or "follow-count" in page_source or '"uniqueId"' in page_source:
                 print(f"   ❌ Username is taken")
                 return False, "Username is already taken"
 
@@ -1504,17 +1513,20 @@ class TikTokSeleniumClaimer:
         self.scan_errors = 0
 
         if threads is None:
-            threads_prompt = (
-                "   WORKER THREADS   \n"
-                "--------------------\n"
-                " How many parallel checks?\n"
-                " (1-20, default 5)"
-            )
-            draw_border(threads_prompt)
-            try:
-                threads = int(input(f"{Fore.YELLOW}>> {Fore.WHITE}") or "5")
-            except ValueError:
+            if _app_instance:
                 threads = 5
+            else:
+                threads_prompt = (
+                    "   WORKER THREADS   \n"
+                    "--------------------\n"
+                    " How many parallel checks?\n"
+                    " (1-20, default 5)"
+                )
+                draw_border(threads_prompt)
+                try:
+                    threads = int(input(f"{Fore.YELLOW}>> {Fore.WHITE}") or "5")
+                except ValueError:
+                    threads = 5
         threads = max(1, min(20, threads))
 
         claim_log = os.path.join(SCRIPT_DIR, "output", "claimed.txt")
@@ -1822,9 +1834,10 @@ class LogPanel(ctk.CTkFrame):
 
     def _poll(self):
         if _app_instance and hasattr(_app_instance, "_log_queue"):
-            while _app_instance._log_queue:
-                msg = _app_instance._log_queue.pop(0)
-                self._append(msg)
+            with _log_lock:
+                while _app_instance._log_queue:
+                    msg = _app_instance._log_queue.pop(0)
+                    self._append(msg)
         self.after(50, self._poll)
 
     def _append(self, message):
@@ -1960,11 +1973,6 @@ class DashboardPage(ctk.CTkFrame):
             command=lambda: self.app.navigate_to(page),
         )
         btn.grid(row=row, column=col, padx=6, pady=4, sticky="nsew")
-
-    def update_stats(self, scanned, claimed, errors):
-        self.scanned_label.configure(text=str(scanned))
-        self.claimed_label.configure(text=str(claimed))
-        self.errors_label.configure(text=str(errors))
 
     def _poll_stats(self):
         if self.app.claimer:
@@ -2596,13 +2604,13 @@ class AccountsPage(ctk.CTkFrame):
                         "Login Success",
                         f"Logged in as @{self.app.claimer.current_username}"
                     ))
-                    self.app.after(0, lambda u=self.app.claimer.current_username: self.app.pages["scan"].update_login_status(u))
+                    self.app.after(0, lambda u=self.app.claimer.current_username: self.login_status.configure(text=f"Logged in as @{u}", text_color=COLORS["success"]))
                 else:
                     self.app.after(0, lambda: self.app.log("Login succeeded but edit profile setup failed"))
-                    self.app.after(0, lambda: self.app.pages["scan"].update_login_status(error=True))
+                    self.app.after(0, lambda: self.login_status.configure(text="Login failed", text_color=COLORS["error"]))
             else:
                 self.app.after(0, lambda: self.app.log(f"Login failed for {acct['username']}"))
-                self.app.after(0, lambda: self.app.pages["scan"].update_login_status(error=True))
+                self.app.after(0, lambda: self.login_status.configure(text="Login failed", text_color=COLORS["error"]))
                 self.app.after(0, lambda: messagebox.showerror("Login Failed", f"Could not login as {acct['username']}"))
             self.app.after(0, lambda: self.login_btn.configure(state="normal"))
             self.app.after(0, lambda: self.inbox_btn.configure(state="normal"))
@@ -2721,7 +2729,7 @@ class AccountsPage(ctk.CTkFrame):
                             messagebox.showinfo("Info", clean)
                             event.set()
                         self.app.after(0, show)
-                        event.wait(timeout=30)
+                        event.wait(timeout=300)
                     logged_in = create_account(
                         self.app.claimer.driver, input_fn=gui_input, pause_fn=gui_pause
                     )
@@ -2945,11 +2953,10 @@ class SettingsPage(ctk.CTkFrame):
             btn.pack(side="left")
 
     def _pick_color(self, key, preview_widget):
-        current = COLORS.get(key, "#888888")
+        current = self._custom_colors.get(key, COLORS.get(key, "#888888"))
         result = colorchooser.askcolor(initialcolor=current, title=f"Choose {COLOR_LABELS.get(key, key)}")
         if result and result[1]:
             hex_color = result[1]
-            COLORS[key] = hex_color
             preview_widget.configure(fg_color=hex_color)
             if not hasattr(self, "_custom_colors"):
                 self._custom_colors = {}
@@ -3056,12 +3063,6 @@ class ConsolePage(ctk.CTkFrame):
                 dst = self.textbox._textbox
                 self.textbox.configure(state="normal")
                 dst.delete("1.0", "end")
-                for tag_name in src.tag_names():
-                    if tag_name == "sel":
-                        continue
-                    ranges = src.tag_ranges(tag_name)
-                    for i in range(0, len(ranges), 2):
-                        dst.tag_add(tag_name, ranges[i], ranges[i + 1])
                 dst.insert("1.0", src.get("1.0", "end"))
                 for tag_name in src.tag_names():
                     if tag_name == "sel":
@@ -3183,6 +3184,8 @@ class App(ctk.CTk):
 
     def apply_theme(self):
         global COLORS
+        if self.claimer and hasattr(self.claimer, 'stop_scan') and not self.claimer.stop_scan.is_set():
+            return
         COLORS = load_theme(self.config)
         self.configure(fg_color=COLORS["bg"])
 

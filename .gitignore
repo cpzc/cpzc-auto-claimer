@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+bin/
+output/*
+!output/.gitkeep
+data/sessions.txt
+data/cookies.json
+data/created_accounts.csv
+data/usernames.txt
+data/accounts.txt
+config.json

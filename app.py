@@ -38,6 +38,24 @@ ctk.set_default_color_theme("blue")
 FONT_FAMILY = "Segoe UI"
 FONT_FAMILY_MONO = "Cascadia Code"
 
+_ANSI_RE = __import__("re").compile(r"\x1b\[[0-9;]*m")
+
+
+def _gui_print(*args, **kwargs):
+    msg = " ".join(str(a) for a in args)
+    msg = _ANSI_RE.sub("", msg).strip()
+    if not msg:
+        return
+    if _app_instance and hasattr(_app_instance, "_log_queue"):
+        _app_instance._log_queue.append(msg)
+
+
+_app_instance = None
+
+import builtins
+builtins._original_print = builtins.print
+builtins.print = _gui_print
+
 
 def load_config():
     config_path = os.path.join(SCRIPT_DIR, "config.json")
@@ -1744,6 +1762,20 @@ class SidebarButton(ctk.CTkButton):
 
 
 class LogPanel(ctk.CTkFrame):
+    _PREFIXES = {
+        "\u2705": ("success", "\u2705"),
+        "\u274c": ("error", "\u274c"),
+        "\u26a0\ufe0f": ("warning", "\u26a0\ufe0f"),
+        "\U0001f50d": ("accent", "\U0001f50d"),
+        "\U0001f4e8": ("accent", "\U0001f4e8"),
+        "\U0001f4e7": ("accent", "\U0001f4e7"),
+        "\U0001f512": ("accent", "\U0001f512"),
+        "\U0001f3af": ("success", "\U0001f3af"),
+        "\U0001f680": ("success", "\U0001f680"),
+        "\u2139\ufe0f": ("text_dim", "\u2139\ufe0f"),
+        "\U0001f4cb": ("text_dim", "\U0001f4cb"),
+    }
+
     def __init__(self, master, **kwargs):
         super().__init__(master, fg_color=COLORS["card"], corner_radius=10, **kwargs)
 
@@ -1775,12 +1807,24 @@ class LogPanel(ctk.CTkFrame):
         )
         self.textbox.pack(fill="both", expand=True, padx=10, pady=(6, 10))
 
-    def log(self, message):
+        self._poll()
+
+    def _poll(self):
+        if _app_instance and hasattr(_app_instance, "_log_queue"):
+            while _app_instance._log_queue:
+                msg = _app_instance._log_queue.pop(0)
+                self._append(msg)
+        self.after(50, self._poll)
+
+    def _append(self, message):
         self.textbox.configure(state="normal")
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.textbox.insert("end", f"[{timestamp}] {message}\n")
         self.textbox.see("end")
         self.textbox.configure(state="disabled")
+
+    def log(self, message):
+        self._append(message)
 
     def clear(self):
         self.textbox.configure(state="normal")
@@ -2910,6 +2954,9 @@ class SettingsPage(ctk.CTkFrame):
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
+        global _app_instance
+        _app_instance = self
+        self._log_queue = []
         self.title("CPZC Auto Claimer")
         self.geometry("1100x720")
         self.minsize(900, 600)

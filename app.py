@@ -1933,15 +1933,18 @@ class AutoScanPage(ctk.CTkFrame):
             ("Create Account", "create"),
             ("Email:Pass File", "credentials"),
         ]
+        self.login_buttons = []
         for i, (text, method) in enumerate(login_methods):
-            ctk.CTkButton(
+            btn = ctk.CTkButton(
                 btn_frame, text=text, height=32,
                 corner_radius=6,
                 font=ctk.CTkFont(family=FONT_FAMILY, size=11),
                 fg_color=COLORS["border"],
                 hover_color=COLORS["accent_dim"],
                 command=lambda m=method: self._login(m),
-            ).grid(row=0, column=i, padx=3, sticky="nsew")
+            )
+            btn.grid(row=0, column=i, padx=3, sticky="nsew")
+            self.login_buttons.append(btn)
 
         ctk.CTkButton(
             login_card, text="Save Cookies", height=28, width=100,
@@ -2041,13 +2044,18 @@ class AutoScanPage(ctk.CTkFrame):
 
     def _count_username_file(self):
         path = self.file_var.get()
-        if os.path.exists(path):
+        if not os.path.exists(path):
+            return
+
+        def count():
             try:
                 with open(path, "r") as f:
                     count = sum(1 for line in f if line.strip())
-                self.progress_label.configure(text=f"Ready — {count} usernames loaded")
+                self.app.after(0, lambda c=count: self.progress_label.configure(text=f"Ready — {c} usernames loaded"))
             except Exception:
                 pass
+
+        threading.Thread(target=count, daemon=True).start()
 
     def _browse_file(self):
         path = filedialog.askopenfilename(
@@ -2065,13 +2073,27 @@ class AutoScanPage(ctk.CTkFrame):
             headless=self.app.config.get("headless", False),
             username_input_delay=self.app.config.get("username_input_delay", 2),
         )
-        self.app.log("Setting up browser...")
-        if not self.app.claimer.setup_driver():
-            self.app.log("Failed to setup browser")
-            messagebox.showerror("Error", "Failed to setup browser. Check Chrome/Chromium is installed.")
-            return
-        self.app.log("Browser ready")
 
+        def setup_and_login():
+            self.app.after(0, lambda: self.progress_label.configure(text="Setting up browser...", text_color=COLORS["accent"]))
+            self.app.after(0, lambda: self._set_buttons(loading=True))
+            if not self.app.claimer.setup_driver():
+                self.app.after(0, lambda: self.progress_label.configure(text="Browser setup failed", text_color=COLORS["error"]))
+                self.app.after(0, lambda: self._set_buttons(loading=False))
+                self.app.after(0, lambda: messagebox.showerror("Error", "Failed to setup browser. Check Chrome/Chromium is installed."))
+                return
+            self.app.after(0, lambda: self.progress_label.configure(text="Browser ready", text_color=COLORS["success"]))
+            self.app.after(0, lambda: self._set_buttons(loading=False))
+            self._do_login(method)
+
+        threading.Thread(target=setup_and_login, daemon=True).start()
+
+    def _set_buttons(self, loading=False):
+        state = "disabled" if loading else "normal"
+        for btn in self.login_buttons:
+            btn.configure(state=state)
+
+    def _do_login(self, method):
         def do_login():
             logged_in = False
             try:
@@ -2495,7 +2517,7 @@ class AccountsPage(ctk.CTkFrame):
         )
         self.inbox_btn.grid(row=0, column=1, padx=(6, 0), sticky="nsew")
 
-        self._load_accounts()
+        self.after(10, self._load_accounts)
 
     def _on_canvas_resize(self, event):
         self.table_canvas.itemconfig(self.table_canvas_window, width=event.width)
@@ -2582,19 +2604,28 @@ class AccountsPage(ctk.CTkFrame):
             username_input_delay=self.app.config.get("username_input_delay", 2),
         )
         self.app.log("Setting up browser...")
+        self.app.after(0, lambda: self._set_account_buttons(loading=True))
         if not self.app.claimer.setup_driver():
             self.app.log("Failed to setup browser")
+            self.app.after(0, lambda: self._set_account_buttons(loading=False))
             return False
+        self.app.after(0, lambda: self._set_account_buttons(loading=False))
         self.app.log("Browser ready")
         return True
+
+    def _set_account_buttons(self, loading=False):
+        state = "disabled" if loading else "normal"
+        self.login_btn.configure(state=state)
+        self.inbox_btn.configure(state=state)
 
     def _login_account(self):
         if self.selected_idx is None:
             messagebox.showwarning("No Selection", "Select an account from the table first")
             return
         acct = self.accounts[self.selected_idx]
-        if not self._ensure_driver():
-            return
+        self.login_btn.configure(state="disabled")
+        self.inbox_btn.configure(state="disabled")
+        self.app.log(f"Logging in as {acct['username']}...")
 
         def do_login():
             def gui_pause(prompt):
@@ -2605,7 +2636,6 @@ class AccountsPage(ctk.CTkFrame):
                     event.set()
                 self.app.after(0, show)
                 event.wait(timeout=300)
-            self.app.log(f"Logging in as {acct['username']}...")
             success = self.app.claimer.login_with_single_account(
                 acct["username"], acct["password"],
                 email=acct.get("email") or None,
@@ -2619,15 +2649,16 @@ class AccountsPage(ctk.CTkFrame):
                         "Login Success",
                         f"Logged in as @{self.app.claimer.current_username}"
                     ))
-                    self.app.log(f"Logged in as @{self.app.claimer.current_username}")
-                    self.app.pages["scan"].update_login_status(self.app.claimer.current_username)
+                    self.app.after(0, lambda u=self.app.claimer.current_username: self.app.pages["scan"].update_login_status(u))
                 else:
-                    self.app.log("Login succeeded but edit profile setup failed")
-                    self.app.pages["scan"].update_login_status(error=True)
+                    self.app.after(0, lambda: self.app.log("Login succeeded but edit profile setup failed"))
+                    self.app.after(0, lambda: self.app.pages["scan"].update_login_status(error=True))
             else:
-                self.app.log(f"Login failed for {acct['username']}")
-                self.app.pages["scan"].update_login_status(error=True)
+                self.app.after(0, lambda: self.app.log(f"Login failed for {acct['username']}"))
+                self.app.after(0, lambda: self.app.pages["scan"].update_login_status(error=True))
                 self.app.after(0, lambda: messagebox.showerror("Login Failed", f"Could not login as {acct['username']}"))
+            self.app.after(0, lambda: self.login_btn.configure(state="normal"))
+            self.app.after(0, lambda: self.inbox_btn.configure(state="normal"))
 
         threading.Thread(target=do_login, daemon=True).start()
 
@@ -2645,6 +2676,10 @@ class AccountsPage(ctk.CTkFrame):
         if not self._ensure_driver():
             return
 
+        self.login_btn.configure(state="disabled")
+        self.inbox_btn.configure(state="disabled")
+        self.app.log(f"Opening inbox for {acct['email']}...")
+
         def do_inbox():
             def gui_pause(prompt):
                 clean = prompt.replace(Fore.YELLOW, "").replace(Fore.WHITE, "")
@@ -2654,9 +2689,10 @@ class AccountsPage(ctk.CTkFrame):
                     event.set()
                 self.app.after(0, show)
                 event.wait(timeout=300)
-            self.app.log(f"Opening inbox for {acct['email']}...")
             self.app.claimer.open_inbox(acct["email"], acct["email_pass"], pause_fn=gui_pause)
-            self.app.log("Inbox opened")
+            self.app.after(0, lambda: self.app.log("Inbox opened"))
+            self.app.after(0, lambda: self.login_btn.configure(state="normal"))
+            self.app.after(0, lambda: self.inbox_btn.configure(state="normal"))
 
         threading.Thread(target=do_inbox, daemon=True).start()
 

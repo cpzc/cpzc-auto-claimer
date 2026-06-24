@@ -1905,57 +1905,6 @@ class AutoScanPage(ctk.CTkFrame):
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 20))
 
-        login_card = ctk.CTkFrame(scroll, fg_color=COLORS["card"], corner_radius=10)
-        login_card.pack(fill="x", pady=(0, 12))
-
-        ctk.CTkLabel(
-            login_card, text="Login to TikTok",
-            font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"),
-            text_color=COLORS["accent"],
-        ).pack(anchor="w", padx=16, pady=(12, 8))
-
-        self.login_status = ctk.CTkLabel(
-            login_card, text="Not logged in",
-            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
-            text_color=COLORS["error"],
-        )
-        self.login_status.pack(anchor="w", padx=16, pady=(0, 8))
-
-        btn_frame = ctk.CTkFrame(login_card, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=16, pady=(0, 12))
-        for i in range(5):
-            btn_frame.columnconfigure(i, weight=1)
-
-        login_methods = [
-            ("Manual (QR)", "manual"),
-            ("Cookies (JSON)", "cookies_json"),
-            ("Cookies (sessions)", "cookies_session"),
-            ("Create Account", "create"),
-            ("Email:Pass File", "credentials"),
-        ]
-        self.login_buttons = []
-        for i, (text, method) in enumerate(login_methods):
-            btn = ctk.CTkButton(
-                btn_frame, text=text, height=32,
-                corner_radius=6,
-                font=ctk.CTkFont(family=FONT_FAMILY, size=11),
-                fg_color=COLORS["border"],
-                hover_color=COLORS["accent_dim"],
-                command=lambda m=method: self._login(m),
-            )
-            btn.grid(row=0, column=i, padx=3, sticky="nsew")
-            self.login_buttons.append(btn)
-
-        ctk.CTkButton(
-            login_card, text="Save Cookies", height=28, width=100,
-            corner_radius=6,
-            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
-            fg_color=COLORS["success"],
-            hover_color="#00b368",
-            text_color="#000000",
-            command=self._save_cookies,
-        ).pack(anchor="w", padx=16, pady=(0, 12))
-
         config_card = ctk.CTkFrame(scroll, fg_color=COLORS["card"], corner_radius=10)
         config_card.pack(fill="x", pady=(0, 12))
 
@@ -2065,146 +2014,6 @@ class AutoScanPage(ctk.CTkFrame):
         if path:
             self.file_var.set(path)
             self._count_username_file()
-
-    def _login(self, method):
-        if self.app.claimer and self.app.claimer.driver:
-            self.app.claimer.cleanup()
-        self.app.claimer = TikTokSeleniumClaimer(
-            headless=self.app.config.get("headless", False),
-            username_input_delay=self.app.config.get("username_input_delay", 2),
-        )
-
-        def setup_and_login():
-            self.app.after(0, lambda: self.progress_label.configure(text="Setting up browser...", text_color=COLORS["accent"]))
-            self.app.after(0, lambda: self._set_buttons(loading=True))
-            if not self.app.claimer.setup_driver():
-                self.app.after(0, lambda: self.progress_label.configure(text="Browser setup failed", text_color=COLORS["error"]))
-                self.app.after(0, lambda: self._set_buttons(loading=False))
-                self.app.after(0, lambda: messagebox.showerror("Error", "Failed to setup browser. Check Chrome/Chromium is installed."))
-                return
-            self.app.after(0, lambda: self.progress_label.configure(text="Browser ready", text_color=COLORS["success"]))
-            self.app.after(0, lambda: self._set_buttons(loading=False))
-            self._do_login(method)
-
-        threading.Thread(target=setup_and_login, daemon=True).start()
-
-    def _set_buttons(self, loading=False):
-        state = "disabled" if loading else "normal"
-        for btn in self.login_buttons:
-            btn.configure(state=state)
-
-    def _do_login(self, method):
-        def do_login():
-            logged_in = False
-            try:
-                if method == "manual":
-                    self.app.log("Opening TikTok login page — log in manually in the browser window")
-                    self.app.claimer.driver.get("https://www.tiktok.com/login")
-                    event = threading.Event()
-                    def show_manual():
-                        messagebox.showinfo(
-                            "Manual Login",
-                            "Log in to TikTok in the browser window.\nClick OK after you have logged in."
-                        )
-                        event.set()
-                    self.app.after(0, show_manual)
-                    event.wait(timeout=300)
-                    logged_in = self.app.claimer.verify_logged_in()
-
-                elif method == "cookies_json":
-                    path = os.path.join(SCRIPT_DIR, "data", "cookies.json")
-                    if not os.path.exists(path):
-                        self.app.log(f"File not found: {path}")
-                        self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
-                        return
-                    logged_in = self.app.claimer.login_with_cookies(path)
-
-                elif method == "cookies_session":
-                    path = os.path.join(SCRIPT_DIR, "data", "sessions.txt")
-                    if not os.path.exists(path):
-                        self.app.log(f"File not found: {path}")
-                        self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
-                        return
-                    logged_in = self.app.claimer.login_with_cookies(path)
-
-                elif method == "create":
-                    def gui_input(prompt):
-                        result = [None]
-                        event = threading.Event()
-                        def ask():
-                            result[0] = simpledialog.askstring("Input Required", prompt)
-                            event.set()
-                        self.app.after(0, ask)
-                        event.wait(timeout=120)
-                        return result[0] or ""
-                    def gui_pause(prompt):
-                        clean = prompt.replace(Fore.YELLOW, "").replace(Fore.WHITE, "")
-                        event = threading.Event()
-                        def show():
-                            messagebox.showinfo("Info", clean)
-                            event.set()
-                        self.app.after(0, show)
-                        event.wait(timeout=30)
-                    logged_in = create_account(
-                        self.app.claimer.driver, input_fn=gui_input, pause_fn=gui_pause
-                    )
-
-                elif method == "credentials":
-                    path = os.path.join(SCRIPT_DIR, "data", "accounts.txt")
-                    if not os.path.exists(path):
-                        self.app.log(f"File not found: {path}")
-                        self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
-                        return
-                    logged_in = self.app.claimer.login_with_credentials(path)
-            except Exception as e:
-                self.app.log(f"Login error: {e}")
-
-            if logged_in:
-                self.app.log("Login successful")
-                if not self.app.claimer.initialize_edit_profile_setup():
-                    self.app.log("Edit profile setup failed")
-                    self.app.after(0, lambda: self.login_status.configure(
-                        text="Logged in (edit profile failed)", text_color=COLORS["warning"]
-                    ))
-                else:
-                    self.app.after(0, lambda: self.login_status.configure(
-                        text=f"Logged in as @{self.app.claimer.current_username}",
-                        text_color=COLORS["success"],
-                    ))
-            else:
-                self.app.log("Login failed")
-                self.app.after(0, lambda: self.login_status.configure(
-                    text="Login failed", text_color=COLORS["error"]
-                ))
-
-        threading.Thread(target=do_login, daemon=True).start()
-
-    def _save_cookies(self):
-        if not self.app.claimer or not self.app.claimer.driver:
-            messagebox.showwarning("Warning", "No browser session to save")
-            return
-        path = os.path.join(SCRIPT_DIR, "data", "sessions.txt")
-        try:
-            self.app.claimer.save_cookies(path)
-            self.app.log(f"Cookies saved to {path}")
-        except Exception as e:
-            self.app.log(f"Failed to save cookies: {e}")
-
-    def update_login_status(self, username=None, error=False):
-        """Update the login status label from external pages (e.g. Accounts tab)."""
-        if error:
-            self.app.after(0, lambda: self.login_status.configure(
-                text="Login failed", text_color=COLORS["error"]
-            ))
-        elif username:
-            self.app.after(0, lambda: self.login_status.configure(
-                text=f"Logged in as @{username}",
-                text_color=COLORS["success"],
-            ))
-        else:
-            self.app.after(0, lambda: self.login_status.configure(
-                text="Not logged in", text_color=COLORS["text_dim"]
-            ))
 
     def _start_scan(self):
         if self.scanning:
@@ -2446,6 +2255,57 @@ class AccountsPage(ctk.CTkFrame):
             font=ctk.CTkFont(family=FONT_FAMILY, size=28, weight="bold"),
             text_color=COLORS["text"],
         ).pack(anchor="w", pady=(0, 20))
+
+        login_card = ctk.CTkFrame(scroll, fg_color=COLORS["card"], corner_radius=10)
+        login_card.pack(fill="x", pady=(0, 12))
+
+        ctk.CTkLabel(
+            login_card, text="Login to TikTok",
+            font=ctk.CTkFont(family=FONT_FAMILY, size=15, weight="bold"),
+            text_color=COLORS["accent"],
+        ).pack(anchor="w", padx=16, pady=(12, 8))
+
+        self.login_status = ctk.CTkLabel(
+            login_card, text="Not logged in",
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
+            text_color=COLORS["error"],
+        )
+        self.login_status.pack(anchor="w", padx=16, pady=(0, 8))
+
+        btn_frame = ctk.CTkFrame(login_card, fg_color="transparent")
+        btn_frame.pack(fill="x", padx=16, pady=(0, 12))
+        for i in range(5):
+            btn_frame.columnconfigure(i, weight=1)
+
+        login_methods = [
+            ("Manual (QR)", "manual"),
+            ("Cookies (JSON)", "cookies_json"),
+            ("Cookies (sessions)", "cookies_session"),
+            ("Create Account", "create"),
+            ("Email:Pass File", "credentials"),
+        ]
+        self.login_buttons = []
+        for i, (text, method) in enumerate(login_methods):
+            btn = ctk.CTkButton(
+                btn_frame, text=text, height=32,
+                corner_radius=6,
+                font=ctk.CTkFont(family=FONT_FAMILY, size=11),
+                fg_color=COLORS["border"],
+                hover_color=COLORS["accent_dim"],
+                command=lambda m=method: self._login(m),
+            )
+            btn.grid(row=0, column=i, padx=3, sticky="nsew")
+            self.login_buttons.append(btn)
+
+        ctk.CTkButton(
+            login_card, text="Save Cookies", height=28, width=100,
+            corner_radius=6,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
+            fg_color=COLORS["success"],
+            hover_color="#00b368",
+            text_color="#000000",
+            command=self._save_cookies,
+        ).pack(anchor="w", padx=16, pady=(0, 12))
 
         table_card = ctk.CTkFrame(scroll, fg_color=COLORS["card"], corner_radius=10)
         table_card.pack(fill="both", expand=True, pady=(0, 12))
@@ -2695,6 +2555,130 @@ class AccountsPage(ctk.CTkFrame):
             self.app.after(0, lambda: self.inbox_btn.configure(state="normal"))
 
         threading.Thread(target=do_inbox, daemon=True).start()
+
+    def _login(self, method):
+        if self.app.claimer and self.app.claimer.driver:
+            self.app.claimer.cleanup()
+        self.app.claimer = TikTokSeleniumClaimer(
+            headless=self.app.config.get("headless", False),
+            username_input_delay=self.app.config.get("username_input_delay", 2),
+        )
+
+        def setup_and_login():
+            self.app.after(0, lambda: self.login_status.configure(text="Setting up browser...", text_color=COLORS["accent"]))
+            self.app.after(0, lambda: self._set_buttons(loading=True))
+            if not self.app.claimer.setup_driver():
+                self.app.after(0, lambda: self.login_status.configure(text="Browser setup failed", text_color=COLORS["error"]))
+                self.app.after(0, lambda: self._set_buttons(loading=False))
+                self.app.after(0, lambda: messagebox.showerror("Error", "Failed to setup browser. Check Chrome/Chromium is installed."))
+                return
+            self.app.after(0, lambda: self.login_status.configure(text="Browser ready", text_color=COLORS["success"]))
+            self.app.after(0, lambda: self._set_buttons(loading=False))
+            self._do_login(method)
+
+        threading.Thread(target=setup_and_login, daemon=True).start()
+
+    def _set_buttons(self, loading=False):
+        state = "disabled" if loading else "normal"
+        for btn in self.login_buttons:
+            btn.configure(state=state)
+
+    def _do_login(self, method):
+        def do_login():
+            logged_in = False
+            try:
+                if method == "manual":
+                    self.app.log("Opening TikTok login page — log in manually in the browser window")
+                    self.app.claimer.driver.get("https://www.tiktok.com/login")
+                    event = threading.Event()
+                    def show_manual():
+                        messagebox.showinfo(
+                            "Manual Login",
+                            "Log in to TikTok in the browser window.\nClick OK after you have logged in."
+                        )
+                        event.set()
+                    self.app.after(0, show_manual)
+                    event.wait(timeout=300)
+                    logged_in = self.app.claimer.verify_logged_in()
+
+                elif method == "cookies_json":
+                    path = os.path.join(SCRIPT_DIR, "data", "cookies.json")
+                    if not os.path.exists(path):
+                        self.app.log(f"File not found: {path}")
+                        self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
+                        return
+                    logged_in = self.app.claimer.login_with_cookies(path)
+
+                elif method == "cookies_session":
+                    path = os.path.join(SCRIPT_DIR, "data", "sessions.txt")
+                    if not os.path.exists(path):
+                        self.app.log(f"File not found: {path}")
+                        self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
+                        return
+                    logged_in = self.app.claimer.login_with_cookies(path)
+
+                elif method == "create":
+                    def gui_input(prompt):
+                        result = [None]
+                        event = threading.Event()
+                        def ask():
+                            result[0] = simpledialog.askstring("Input Required", prompt)
+                            event.set()
+                        self.app.after(0, ask)
+                        event.wait(timeout=120)
+                        return result[0] or ""
+                    def gui_pause(prompt):
+                        clean = prompt.replace(Fore.YELLOW, "").replace(Fore.WHITE, "")
+                        event = threading.Event()
+                        def show():
+                            messagebox.showinfo("Info", clean)
+                            event.set()
+                        self.app.after(0, show)
+                        event.wait(timeout=30)
+                    logged_in = create_account(
+                        self.app.claimer.driver, input_fn=gui_input, pause_fn=gui_pause
+                    )
+
+                elif method == "credentials":
+                    path = os.path.join(SCRIPT_DIR, "data", "accounts.txt")
+                    if not os.path.exists(path):
+                        self.app.log(f"File not found: {path}")
+                        self.app.after(0, lambda: messagebox.showerror("Error", f"File not found:\n{path}"))
+                        return
+                    logged_in = self.app.claimer.login_with_credentials(path)
+            except Exception as e:
+                self.app.log(f"Login error: {e}")
+
+            if logged_in:
+                self.app.log("Login successful")
+                if not self.app.claimer.initialize_edit_profile_setup():
+                    self.app.log("Edit profile setup failed")
+                    self.app.after(0, lambda: self.login_status.configure(
+                        text="Logged in (edit profile failed)", text_color=COLORS["warning"]
+                    ))
+                else:
+                    self.app.after(0, lambda: self.login_status.configure(
+                        text=f"Logged in as @{self.app.claimer.current_username}",
+                        text_color=COLORS["success"],
+                    ))
+            else:
+                self.app.log("Login failed")
+                self.app.after(0, lambda: self.login_status.configure(
+                    text="Login failed", text_color=COLORS["error"]
+                ))
+
+        threading.Thread(target=do_login, daemon=True).start()
+
+    def _save_cookies(self):
+        if not self.app.claimer or not self.app.claimer.driver:
+            messagebox.showwarning("Warning", "No browser session to save")
+            return
+        path = os.path.join(SCRIPT_DIR, "data", "sessions.txt")
+        try:
+            self.app.claimer.save_cookies(path)
+            self.app.log(f"Cookies saved to {path}")
+        except Exception as e:
+            self.app.log(f"Failed to save cookies: {e}")
 
 
 class SettingsPage(ctk.CTkFrame):

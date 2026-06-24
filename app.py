@@ -917,7 +917,14 @@ class TikTokSeleniumClaimer:
         if not email or "@" not in email:
             return False
         domain = email.split("@")[-1].lower()
-        return domain in ("firstmail.ltd", "firstmail.online")
+        return domain in (
+            "firstmail.ltd", "firstmail.online",
+            "firstmailler.com", "firstmailler.net",
+            "raymanmail.com", "fmaild.com", "dfirstmail.com",
+            "tformemail.com", "mergencmail.com", "protecemail.com",
+            "ervmail.com", "espismail.com", "spitalitmail.com",
+            "maillsk.com", "maillv.com", "oonmail.com", "znemail.com",
+        )
 
     def _fill_firstmail_credentials(self, email, email_password):
         self.driver.execute_script("""

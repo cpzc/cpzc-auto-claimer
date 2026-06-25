@@ -386,6 +386,7 @@ class TikTokSeleniumClaimer:
         self.current_username = None
         self.claimed = False
         self.stop_scan = threading.Event()
+        self.pause_scan = threading.Event()
         self.username_input = None
         self.scan_scanned = 0
         self.scan_claimed = 0
@@ -1508,6 +1509,7 @@ class TikTokSeleniumClaimer:
 
         self.claimed = False
         self.stop_scan.clear()
+        self.pause_scan.clear()
         self.scan_scanned = 0
         self.scan_claimed = 0
         self.scan_errors = 0
@@ -1572,6 +1574,9 @@ class TikTokSeleniumClaimer:
             nonlocal checked, error_cooldown
             if self.claimed or self.stop_scan.is_set():
                 return
+
+            while self.pause_scan.is_set() and not self.stop_scan.is_set():
+                time.sleep(0.5)
 
             wait_cooldown()
 
@@ -2044,27 +2049,28 @@ class AutoScanPage(ctk.CTkFrame):
         action_frame = ctk.CTkFrame(scroll, fg_color="transparent")
         action_frame.pack(fill="x", pady=(0, 12))
 
-        self.start_btn = ctk.CTkButton(
+        self.scan_btn = ctk.CTkButton(
             action_frame, text="Start Scan", height=44,
             corner_radius=10,
             font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
             fg_color=COLORS["success"],
             hover_color="#00b368",
             text_color="#000000",
-            command=self._start_scan,
+            command=self._toggle_scan,
         )
-        self.start_btn.pack(side="left", padx=(0, 8), expand=True, fill="x")
+        self.scan_btn.pack(side="left", padx=(0, 8), expand=True, fill="x")
 
-        self.stop_btn = ctk.CTkButton(
-            action_frame, text="Stop", height=44,
+        self.pause_btn = ctk.CTkButton(
+            action_frame, text="Pause", height=44,
             corner_radius=10,
             font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
-            fg_color=COLORS["error"],
-            hover_color="#cc0000",
-            command=self._stop_scan,
+            fg_color=COLORS["warning"],
+            hover_color="#cc8800",
+            text_color="#000000",
+            command=self._toggle_pause,
             state="disabled",
         )
-        self.stop_btn.pack(side="left", expand=True, fill="x")
+        self.pause_btn.pack(side="left", expand=True, fill="x")
 
         progress_card = ctk.CTkFrame(scroll, fg_color=COLORS["card"], corner_radius=10)
         progress_card.pack(fill="x", pady=(0, 12))
@@ -2109,6 +2115,12 @@ class AutoScanPage(ctk.CTkFrame):
             self.file_var.set(path)
             self._count_username_file()
 
+    def _toggle_scan(self):
+        if self.scanning:
+            self._stop_scan()
+        else:
+            self._start_scan()
+
     def _start_scan(self):
         if self.scanning:
             return
@@ -2132,8 +2144,8 @@ class AutoScanPage(ctk.CTkFrame):
 
         self.scanning = True
         self._stop_event.clear()
-        self.start_btn.configure(state="disabled")
-        self.stop_btn.configure(state="normal")
+        self.scan_btn.configure(text="Stop Scan", fg_color=COLORS["error"], hover_color="#cc0000")
+        self.pause_btn.configure(state="normal")
         self.progress_label.configure(text="Scanning...", text_color=COLORS["accent"])
 
         def run():
@@ -2147,8 +2159,8 @@ class AutoScanPage(ctk.CTkFrame):
 
     def _scan_finished(self):
         self.scanning = False
-        self.start_btn.configure(state="normal")
-        self.stop_btn.configure(state="disabled")
+        self.scan_btn.configure(text="Start Scan", fg_color=COLORS["success"], hover_color="#00b368", state="normal")
+        self.pause_btn.configure(text="Pause", state="disabled")
         if self.app.claimer and self.app.claimer.claimed:
             self.progress_label.configure(text="Username claimed!", text_color=COLORS["success"])
             self.app.log("Username claimed successfully!")
@@ -2162,7 +2174,22 @@ class AutoScanPage(ctk.CTkFrame):
     def _stop_scan(self):
         if self.app.claimer:
             self.app.claimer.stop_scan.set()
+            self.app.claimer.pause_scan.clear()
             self.app.log("Stopping scan...")
+
+    def _toggle_pause(self):
+        if not self.app.claimer:
+            return
+        if self.app.claimer.pause_scan.is_set():
+            self.app.claimer.pause_scan.clear()
+            self.pause_btn.configure(text="Pause", fg_color=COLORS["warning"])
+            self.progress_label.configure(text="Scanning...", text_color=COLORS["accent"])
+            self.app.log("Scan resumed")
+        else:
+            self.app.claimer.pause_scan.set()
+            self.pause_btn.configure(text="Resume", fg_color=COLORS["accent"])
+            self.progress_label.configure(text="Paused", text_color=COLORS["warning"])
+            self.app.log("Scan paused")
 
 
 class GeneratePage(ctk.CTkFrame):
